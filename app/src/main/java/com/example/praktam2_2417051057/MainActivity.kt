@@ -1,28 +1,22 @@
 package com.example.praktam2_2417051057
 
 import Model.BMIsource
+import Model.BMI
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.Card
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,42 +42,95 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun DaftarBMIScreen() {
 
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState())
+            .statusBarsPadding(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
 
-        Text(
-            text = "Kategori BMI",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
-        )
+        item {
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Rekomendasi BMI",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
 
-        BMIsource.dummyBMI.forEach { bmi ->
+            Spacer(modifier = Modifier.height(12.dp))
 
-            DetailBMIScreen(bmi)
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(BMIsource.dummyBMI) { bmi ->
+                    BMIRowItem(bmi)
+                }
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "Semua Kategori BMI",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        items(BMIsource.dummyBMI) { bmi ->
+            DetailBMIScreen(bmi)
         }
     }
 }
 
 @Composable
-fun DetailBMIScreen(bmi: Model.BMI) {
+fun BMIRowItem(bmi: BMI) {
+
+    Card(
+        modifier = Modifier.width(160.dp),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Column {
+
+            Image(
+                painter = painterResource(id = bmi.imageRes),
+                contentDescription = bmi.nama,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp),
+                contentScale = ContentScale.Fit
+            )
+
+            Column(modifier = Modifier.padding(8.dp)) {
+
+                Text(
+                    text = bmi.nama,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleSmall
+                )
+
+                Text(
+                    text = bmi.nilai,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun DetailBMIScreen(bmi: BMI) {
 
     var isFavorite by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(6.dp)
     ) {
 
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+        Column {
 
             Box {
 
@@ -92,24 +139,21 @@ fun DetailBMIScreen(bmi: Model.BMI) {
                     contentDescription = bmi.nama,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(150.dp),
+                        .height(200.dp),
                     contentScale = ContentScale.Fit
                 )
 
                 IconButton(
-                    onClick = {
-                        isFavorite = !isFavorite
-                    },
-                    modifier = Modifier.align(Alignment.TopEnd)
+                    onClick = { isFavorite = !isFavorite },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
                 ) {
-
                     Icon(
                         imageVector =
                             if (isFavorite) Icons.Filled.Favorite
                             else Icons.Outlined.FavoriteBorder,
-
                         contentDescription = "Favorite",
-
                         tint =
                             if (isFavorite) Color.Red
                             else Color.White
@@ -117,31 +161,30 @@ fun DetailBMIScreen(bmi: Model.BMI) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Column(modifier = Modifier.padding(16.dp)) {
 
-            Text(
-                text = bmi.nama,
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.titleMedium
-            )
+                Text(
+                    text = bmi.nama,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium
+                )
 
-            Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = bmi.deskripsi
-            )
+                Text(text = bmi.deskripsi)
 
-            Text(
-                text = "Nilai BMI: ${bmi.nilai}"
-            )
+                Spacer(modifier = Modifier.height(4.dp))
 
-            Spacer(modifier = Modifier.height(12.dp))
+                Text(text = "Nilai BMI: ${bmi.nilai}")
 
-            Button(
-                onClick = { },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Cek BMI")
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Button(
+                    onClick = { },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Cek BMI")
+                }
             }
         }
     }
@@ -149,7 +192,7 @@ fun DetailBMIScreen(bmi: Model.BMI) {
 
 @Preview(showBackground = true)
 @Composable
-fun DaftarBMIPreview() {
+fun PreviewBMI() {
     PrakTAM2_2417051057Theme {
         DaftarBMIScreen()
     }
