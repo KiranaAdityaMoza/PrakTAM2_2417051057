@@ -19,12 +19,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
 import com.example.praktam2_2417051057.ui.theme.PrakTAM2_2417051057Theme
 
 class MainActivity : ComponentActivity() {
@@ -42,6 +41,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun DaftarBMIScreen() {
 
+    val favoriteMap = remember { mutableStateMapOf<String, Boolean>() }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -53,9 +54,8 @@ fun DaftarBMIScreen() {
         item {
 
             Text(
-                text = "Rekomendasi BMI",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                text = "Klasifikasi BMI",
+                style = MaterialTheme.typography.titleLarge
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -72,13 +72,21 @@ fun DaftarBMIScreen() {
 
             Text(
                 text = "Semua Kategori BMI",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                style = MaterialTheme.typography.titleLarge
             )
         }
 
         items(BMIsource.dummyBMI) { bmi ->
-            DetailBMIScreen(bmi)
+
+            val isFav = favoriteMap[bmi.nama] ?: false
+
+            DetailBMIScreen(
+                bmi = bmi,
+                isFavorite = isFav,
+                onFavoriteClick = {
+                    favoriteMap[bmi.nama] = !isFav
+                }
+            )
         }
     }
 }
@@ -89,7 +97,10 @@ fun BMIRowItem(bmi: BMI) {
     Card(
         modifier = Modifier.width(160.dp),
         shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(4.dp)
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
         Column {
 
@@ -106,13 +117,13 @@ fun BMIRowItem(bmi: BMI) {
 
                 Text(
                     text = bmi.nama,
-                    fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleSmall
                 )
 
                 Text(
                     text = bmi.nilai,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
         }
@@ -120,14 +131,19 @@ fun BMIRowItem(bmi: BMI) {
 }
 
 @Composable
-fun DetailBMIScreen(bmi: BMI) {
-
-    var isFavorite by remember { mutableStateOf(false) }
+fun DetailBMIScreen(
+    bmi: BMI,
+    isFavorite: Boolean,
+    onFavoriteClick: () -> Unit
+) {
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(6.dp)
+        elevation = CardDefaults.cardElevation(6.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
 
         Column {
@@ -144,7 +160,7 @@ fun DetailBMIScreen(bmi: BMI) {
                 )
 
                 IconButton(
-                    onClick = { isFavorite = !isFavorite },
+                    onClick = onFavoriteClick,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(8.dp)
@@ -156,7 +172,7 @@ fun DetailBMIScreen(bmi: BMI) {
                         contentDescription = "Favorite",
                         tint =
                             if (isFavorite) Color.Red
-                            else Color.White
+                            else Color.Gray
                     )
                 }
             }
@@ -165,17 +181,23 @@ fun DetailBMIScreen(bmi: BMI) {
 
                 Text(
                     text = bmi.nama,
-                    fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleMedium
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Text(text = bmi.deskripsi)
+                Text(
+                    text = bmi.deskripsi,
+                    style = MaterialTheme.typography.bodyMedium
+                )
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                Text(text = "Nilai BMI: ${bmi.nilai}")
+                Text(
+                    text = "Nilai BMI: ${bmi.nilai}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
