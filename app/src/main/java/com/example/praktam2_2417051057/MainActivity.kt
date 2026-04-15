@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -24,6 +25,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
+import androidx.navigation.compose.*
+import androidx.navigation.NavHostController
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import com.example.praktam2_2417051057.ui.theme.PrakTAM2_2417051057Theme
 
 class MainActivity : ComponentActivity() {
@@ -32,14 +37,37 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             PrakTAM2_2417051057Theme {
-                DaftarBMIScreen()
+                val navController = rememberNavController()
+                AppNavigation(navController)
             }
         }
     }
 }
 
 @Composable
-fun DaftarBMIScreen() {
+fun AppNavigation(navController: NavHostController) {
+    NavHost(navController = navController, startDestination = "home") {
+
+        composable("home") {
+            DaftarBMIScreen(navController)
+        }
+
+        composable("detail/{nama}") { backStackEntry ->
+            val nama = backStackEntry.arguments?.getString("nama")
+
+            val bmi = BMIsource.dummyBMI.find {
+                it.nama == nama
+            }
+
+            if (bmi != null) {
+                DetailPage(bmi, navController)
+            }
+        }
+    }
+}
+
+@Composable
+fun DaftarBMIScreen(navController: NavHostController) {
 
     val favoriteMap = remember { mutableStateMapOf<String, Boolean>() }
 
@@ -64,7 +92,7 @@ fun DaftarBMIScreen() {
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(BMIsource.dummyBMI) { bmi ->
-                    BMIRowItem(bmi)
+                    BMIRowItem(bmi, navController)
                 }
             }
 
@@ -85,6 +113,9 @@ fun DaftarBMIScreen() {
                 isFavorite = isFav,
                 onFavoriteClick = {
                     favoriteMap[bmi.nama] = !isFav
+                },
+                onButtonClick = {
+                    navController.navigate("detail/${bmi.nama}")
                 }
             )
         }
@@ -92,15 +123,15 @@ fun DaftarBMIScreen() {
 }
 
 @Composable
-fun BMIRowItem(bmi: BMI) {
+fun BMIRowItem(bmi: BMI, navController: NavHostController) {
 
     Card(
-        modifier = Modifier.width(160.dp),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+        modifier = Modifier
+            .width(160.dp)
+            .clickable {
+                navController.navigate("detail/${bmi.nama}")
+            },
+        shape = RoundedCornerShape(12.dp)
     ) {
         Column {
 
@@ -115,15 +146,10 @@ fun BMIRowItem(bmi: BMI) {
 
             Column(modifier = Modifier.padding(8.dp)) {
 
-                Text(
-                    text = bmi.nama,
-                    style = MaterialTheme.typography.titleSmall
-                )
-
+                Text(text = bmi.nama)
                 Text(
                     text = bmi.nilai,
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.bodySmall
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -134,16 +160,13 @@ fun BMIRowItem(bmi: BMI) {
 fun DetailBMIScreen(
     bmi: BMI,
     isFavorite: Boolean,
-    onFavoriteClick: () -> Unit
+    onFavoriteClick: () -> Unit,
+    onButtonClick: () -> Unit
 ) {
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(6.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+        shape = RoundedCornerShape(16.dp)
     ) {
 
         Column {
@@ -161,48 +184,34 @@ fun DetailBMIScreen(
 
                 IconButton(
                     onClick = onFavoriteClick,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(8.dp)
+                    modifier = Modifier.align(Alignment.TopEnd)
                 ) {
                     Icon(
                         imageVector =
                             if (isFavorite) Icons.Filled.Favorite
                             else Icons.Outlined.FavoriteBorder,
-                        contentDescription = "Favorite",
-                        tint =
-                            if (isFavorite) Color.Red
-                            else Color.Gray
+                        contentDescription = null,
+                        tint = if (isFavorite) Color.Red else Color.Gray
                     )
                 }
             }
 
             Column(modifier = Modifier.padding(16.dp)) {
 
-                Text(
-                    text = bmi.nama,
-                    style = MaterialTheme.typography.titleMedium
-                )
+                Text(text = bmi.nama)
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Text(
-                    text = bmi.deskripsi,
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Text(text = bmi.deskripsi)
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                Text(
-                    text = "Nilai BMI: ${bmi.nilai}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Text(text = "Nilai BMI: ${bmi.nilai}")
 
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Button(
-                    onClick = { },
+                    onClick = onButtonClick,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Cek BMI")
@@ -212,10 +221,94 @@ fun DetailBMIScreen(
     }
 }
 
+@Composable
+fun DetailPage(bmi: BMI, navController: NavHostController) {
+
+    var isLoading by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+
+        Column(modifier = Modifier.padding(16.dp)) {
+
+            Image(
+                painter = painterResource(id = bmi.imageRes),
+                contentDescription = bmi.nama,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = bmi.nama,
+                style = MaterialTheme.typography.titleLarge
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(text = bmi.deskripsi)
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = "Nilai BMI: ${bmi.nilai}",
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+                        isLoading = true
+                        delay(2000)
+                        snackbarHostState.showSnackbar(
+                            "Analisis BMI ${bmi.nama} selesai"
+                        )
+                        isLoading = false
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isLoading
+            ) {
+
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Memproses...")
+                } else {
+                    Text("Analisis BMI")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Button(
+                onClick = { navController.popBackStack() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Kembali")
+            }
+        }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.Center)
+        )
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun PreviewBMI() {
     PrakTAM2_2417051057Theme {
-        DaftarBMIScreen()
+        val navController = rememberNavController()
+        DaftarBMIScreen(navController)
     }
 }
