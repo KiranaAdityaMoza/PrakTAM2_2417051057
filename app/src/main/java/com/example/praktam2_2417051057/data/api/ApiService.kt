@@ -1,6 +1,6 @@
-package com.example.praktam2_2417051057.network
+package com.example.praktam2_2417051057.data.api
 
-import Model.BMI
+import com.example.praktam2_2417051057.data.model.BMI
 import retrofit2.http.GET
 
 interface ApiService {

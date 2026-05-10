@@ -1,7 +1,5 @@
 package com.example.praktam2_2417051057
 
-import Model.BMI
-import com.example.praktam2_2417051057.network.RetrofitClient
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -27,6 +25,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
 import coil.compose.AsyncImage
+import com.example.praktam2_2417051057.data.model.BMI
+import com.example.praktam2_2417051057.data.repository.BMIRepository
 import com.example.praktam2_2417051057.ui.theme.PrakTAM2_2417051057Theme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -91,6 +91,7 @@ fun DaftarBMIScreen(
     navController: NavHostController,
     onBMILoaded: (List<BMI>) -> Unit = {}
 ) {
+    val repository = remember { BMIRepository() }
 
     var bmiList by remember {
         mutableStateOf<List<BMI>>(emptyList())
@@ -109,18 +110,15 @@ fun DaftarBMIScreen(
     }
 
     LaunchedEffect(Unit) {
-
+        isLoading = true
         try {
-
-            bmiList = RetrofitClient.instance.getBMI()
-
-            onBMILoaded(bmiList)
-
+            val result = repository.getBMI()
+            bmiList = result
+            onBMILoaded(result)
+            
             isLoading = false
-            isError = false
-
+            isError = result.isEmpty()
         } catch (e: Exception) {
-
             isLoading = false
             isError = true
         }
